@@ -1,16 +1,24 @@
-# 🌐 Website Uptime Monitor
+# 🌙 Luna AI — ARC-SERVER Website Uptime Monitor
 
-A lightweight, automated website uptime monitoring tool powered by **GitHub Actions** and **Gmail SMTP**. It monitors website availability every 5 minutes and sends instant email alerts when your site goes down or recovers.
+A lightweight, 24/7 automated website uptime monitoring tool powered by **GitHub Actions**, **Python 3**, and **Gmail SMTP**. Features **Luna AI (ARC-SERVER Core)** persona with custom HTML email notifications and embedded avatars.
+
+---
+
+## 📸 ARC-SERVER Avatars
+
+| Online & Healthy ✅ | Critical Alert / Down ❌ |
+|:---:|:---:|
+| ![Luna AI Online](assets/luna_online.jpg) | ![Luna AI Offline](assets/luna_offline.jpg) |
 
 ---
 
 ## ⚡ Features
 
-- ⏱️ **Automated Checks**: Runs every 5 minutes via GitHub Actions cron schedule.
-- 📧 **Instant Email Alerts**: Sends notifications when your site transitions from **Online ➔ Offline** or **Offline ➔ Online**.
-- 🧠 **Smart State Persistence**: Tracks previous status in `status.txt` to avoid spamming your inbox on every check.
-- 💰 **100% Free**: Operates entirely within GitHub Actions free tier — no external paid monitoring services required.
-- 🛠️ **Manual Trigger Support**: Includes `workflow_dispatch` so you can manually trigger tests anytime from GitHub interface.
+- ⏱️ **24/7 Cloud Automated Monitoring**: Runs every 5 minutes in GitHub Cloud — **works even when your laptop is turned OFF**.
+- 🌙 **Luna AI Persona**: Custom email alerts ("Good morning Boss! https://www.tn-mbamca.com is ONLINE ✨").
+- 🎨 **HTML Email Templates**: Styled cyber-terminal layout with live embedded ARC-SERVER status avatars.
+- 📧 **Smart State Alerts**: Only emails when your site goes **DOWN** or comes back **ONLINE** (prevents inbox spam).
+- 💰 **100% Free**: Uses 0 paid services — operates entirely within free tier limits.
 
 ---
 
@@ -18,68 +26,32 @@ A lightweight, automated website uptime monitoring tool powered by **GitHub Acti
 
 ```mermaid
 flowchart TD
-    A[GitHub Actions Schedule / Manual] --> B[Check Website HTTP Status]
-    B --> C{Is Status 200-399?}
-    C -- Yes --> D[State = Online]
-    C -- No --> E[State = Offline]
-    D --> F{Previous State?}
+    A[GitHub Actions 5-Min Schedule / Manual] --> B[Run Python 3 monitor.py]
+    B --> C[Check Target URL HTTP Status]
+    C --> D{HTTP 200-399?}
+    D -- Yes --> E[State = ONLINE]
+    D -- No --> F[State = OFFLINE]
     E --> G{Previous State?}
-    F -- Was Offline/Unknown --> H[Send Email: Site Online ✅]
-    G -- Was Online --> I[Send Email: Site Down ❌]
-    F -- Was Online --> J[Save State & Commit]
-    G -- Was Offline --> J
-    H --> J
-    I --> J
+    F --> H{Previous State?}
+    G -- Was Offline --> I[Luna AI sends Recovery Email ✅]
+    H -- Was Online --> J[Luna AI sends Emergency Alert 🚨]
+    G -- Was Online --> K[Save Status & Exit]
+    H -- Was Offline --> K
+    I --> K
+    J --> K
 ```
 
 ---
 
-## 🚀 Setup Guide
+## 🚀 Setup & Secrets Guide
 
-### 1. Configure Repository Secrets
-Go to your GitHub repository: **Settings ➔ Secrets and variables ➔ Actions ➔ New repository secret**.
-
-Add the following three secrets:
+In your GitHub repository (**Settings ➔ Secrets and variables ➔ Actions ➔ New repository secret**), configure:
 
 | Secret Name | Value | Description |
 |---|---|---|
-| `EMAIL_USERNAME` | `arunachalamthehacker@gmail.com` | Your sender email address |
-| `EMAIL_PASSWORD` | `<16-char-app-password>` | Gmail App Password (see below) |
-| `EMAIL_TO` | `cutyarunachalam1@gmail.com` | Recipient email address for alerts |
-
-> ⚠️ **Important**: Google blocks regular account passwords for SMTP access. You **must** generate a 16-character **Gmail App Password**.
-
-#### How to get a Gmail App Password:
-1. Enable **2-Step Verification** on your Google Account ([myaccount.google.com/security](https://myaccount.google.com/security)).
-2. Go to **App Passwords** ([myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)).
-3. Generate an App Password for **Mail**.
-4. Copy the generated 16-character code and paste it as the `EMAIL_PASSWORD` secret.
-
----
-
-### 2. Enable Workflow Permissions
-To allow GitHub Actions to commit state updates (`status.txt`):
-1. Navigate to **Settings ➔ Actions ➔ General**.
-2. Under **Workflow permissions**, select **Read and write permissions**.
-3. Click **Save**.
-
----
-
-### 3. Change Target Website
-To monitor a different website, edit [.github/workflows/monitor.yml](.github/workflows/monitor.yml):
-
-```yaml
-URL="https://yourwebsite.com"
-```
-
----
-
-## 🧪 Testing
-
-1. Go to your repository on GitHub.
-2. Click the **Actions** tab.
-3. Select **Website Uptime Monitor** from the left sidebar.
-4. Click **Run workflow** ➔ **Run workflow**.
+| `EMAIL_USERNAME` | `arunachalamthehacker@gmail.com` | Sender email address |
+| `EMAIL_PASSWORD` | `vwtadphcrbrcaemo` | Gmail App Password |
+| `EMAIL_TO` | `cutyarunachalam1@gmail.com` | Notification recipient email |
 
 ---
 
