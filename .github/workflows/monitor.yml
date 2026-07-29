@@ -30,39 +30,29 @@ jobs:
         id: prev
         run: |
           if [ -f status.txt ]; then
-            echo "prev_state=$(cat status.txt)" >> "$GITHUB_OUTPUT"
+            echo "prev_state=$(cat status.txt | tr -d '\r\n')" >> "$GITHUB_OUTPUT"
           else
             echo "prev_state=unknown" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Email me — site just came ONLINE
-        if: steps.check.outputs.site_state == 'online' && steps.prev.outputs.prev_state != 'online'
+      - name: Send Test Email Notification
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "✅ Website Uptime Monitor - Site is ONLINE (Demo)"
+          subject: "✅ Website Uptime Monitor - Test Email Demo"
           to: ${{ secrets.EMAIL_TO }}
           from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
           body: |
-            Target site (google.com) is ONLINE.
-            HTTP status: ${{ steps.check.outputs.http_status }}
-            Checked at: ${{ github.run_id }} (UTC time in Actions log)
-
-      - name: Email me — site just went OFFLINE (optional, comment out if not needed)
-        if: steps.check.outputs.site_state == 'offline' && steps.prev.outputs.prev_state == 'online'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "❌ tn-mbamca.com is DOWN"
-          to: ${{ secrets.EMAIL_TO }}
-          from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
-          body: "tn-mbamca.com went down. HTTP status: ${{ steps.check.outputs.http_status }}"
+            Hello! This is a test email demo sent directly from your GitHub Actions workflow.
+            
+            Target Site: https://google.com
+            HTTP Status: ${{ steps.check.outputs.http_status }}
+            Site State: ${{ steps.check.outputs.site_state }}
+            Previous State: ${{ steps.prev.outputs.prev_state }}
+            Run ID: ${{ github.run_id }}
 
       - name: Save current state
         run: echo "${{ steps.check.outputs.site_state }}" > status.txt
