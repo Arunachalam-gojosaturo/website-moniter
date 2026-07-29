@@ -2,85 +2,50 @@ name: Website Uptime Monitor
 
 on:
   schedule:
-    - cron: '*/5 * * * *'   # every 5 min (GitHub may delay a bit during high load)
-  workflow_dispatch:         # lets you run it manually to test
+    - cron: '*/5 * * * *'   # Every 5 minutes 24/7 in GitHub Cloud
+  workflow_dispatch:        # Manual trigger with options
+    inputs:
+      force_email:
+        description: 'Force send notification email for testing?'
+        required: false
+        type: boolean
+        default: true
+      target_url:
+        description: 'Target URL to monitor'
+        required: false
+        type: string
+        default: 'https://google.com'
 
 permissions:
-  contents: write            # needed to commit status.txt back
+  contents: write           # Needed to commit status.txt and last_run.txt
 
 jobs:
-  check:
+  monitor:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Check site status
-        id: check
-        run: |
-          URL="https://google.com"
-          STATUS=$(curl -o /dev/null -s -w "%{http_code}" -L --max-time 15 "$URL" || echo "000")
-          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
-            echo "site_state=online" >> "$GITHUB_OUTPUT"
-          else
-            echo "site_state=offline" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Read previous state
-        id: prev
-        run: |
-          if [ -f status.txt ]; then
-            echo "prev_state=$(cat status.txt | tr -d '\r\n')" >> "$GITHUB_OUTPUT"
-          else
-            echo "prev_state=unknown" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Email Alert — Site went DOWN ❌
-        if: steps.check.outputs.site_state == 'offline' && steps.prev.outputs.prev_state == 'online'
-        uses: dawidd6/action-send-mail@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "❌ ALERT: google.com is DOWN!"
-          to: ${{ secrets.EMAIL_TO }}
-          from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
-          body: |
-            ⚠️ ALERT: google.com is DOWN!
-            
-            Target URL: https://google.com
-            HTTP Status: ${{ steps.check.outputs.http_status }}
-            Checked At: ${{ github.run_id }}
+          python-version: '3.x'
 
-      - name: Email Alert — Site came back ONLINE ✅
-        if: steps.check.outputs.site_state == 'online' && steps.prev.outputs.prev_state == 'offline'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "✅ RECOVERY: google.com is back ONLINE"
-          to: ${{ secrets.EMAIL_TO }}
-          from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
-          body: |
-            ✅ RECOVERY: google.com is back ONLINE!
-            
-            Target URL: https://google.com
-            HTTP Status: ${{ steps.check.outputs.http_status }}
-            Checked At: ${{ github.run_id }}
+      - name: Run Website Uptime Monitor
+        env:
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          TARGET_URL: ${{ inputs.target_url || 'https://google.com' }}
+          FORCE_EMAIL: ${{ inputs.force_email || 'false' }}
+        run: |
+          python3 monitor.py
 
-      - name: Save current state
-        run: echo "${{ steps.check.outputs.site_state }}" > status.txt
-
-      - name: Keep-alive marker (stops GitHub auto-disabling this schedule after 60 days idle)
-        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > last_run.txt
-
-      - name: Commit updated state
+      - name: Commit & Push Updated Status
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add status.txt last_run.txt
-          git diff --staged --quiet || git commit -m "update status [skip ci]"
+          git diff --staged --quiet || git commit -m "auto: update site status [skip ci]"
           git push
