@@ -1,0 +1,79 @@
+name: Website Uptime Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # every 5 min (GitHub may delay a bit during high load)
+  workflow_dispatch:         # lets you run it manually to test
+
+permissions:
+  contents: write            # needed to commit status.txt back
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check site status
+        id: check
+        run: |
+          URL="https://www.tn-mbamca.com"
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 15 "$URL" || echo "000")
+          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "site_state=online" >> "$GITHUB_OUTPUT"
+          else
+            echo "site_state=offline" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read previous state
+        id: prev
+        run: |
+          if [ -f status.txt ]; then
+            echo "prev_state=$(cat status.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "prev_state=unknown" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Email me — site just came ONLINE
+        if: steps.check.outputs.site_state == 'online' && steps.prev.outputs.prev_state != 'online'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "✅ tn-mbamca.com is ONLINE"
+          to: ${{ secrets.EMAIL_TO }}
+          from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
+          body: |
+            tn-mbamca.com just came back online.
+            HTTP status: ${{ steps.check.outputs.http_status }}
+            Checked at: ${{ github.run_id }} (UTC time in Actions log)
+
+      - name: Email me — site just went OFFLINE (optional, comment out if not needed)
+        if: steps.check.outputs.site_state == 'offline' && steps.prev.outputs.prev_state == 'online'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ tn-mbamca.com is DOWN"
+          to: ${{ secrets.EMAIL_TO }}
+          from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
+          body: "tn-mbamca.com went down. HTTP status: ${{ steps.check.outputs.http_status }}"
+
+      - name: Save current state
+        run: echo "${{ steps.check.outputs.site_state }}" > status.txt
+
+      - name: Keep-alive marker (stops GitHub auto-disabling this schedule after 60 days idle)
+        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > last_run.txt
+
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add status.txt last_run.txt
+          git diff --staged --quiet || git commit -m "update status [skip ci]"
+          git push
