@@ -17,8 +17,8 @@ jobs:
       - name: Check site status
         id: check
         run: |
-          URL="https://www.tn-mbamca.com"
-          STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 15 "$URL" || echo "000")
+          URL="https://google.com"
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" -L --max-time 15 "$URL" || echo "000")
           echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
             echo "site_state=online" >> "$GITHUB_OUTPUT"
@@ -43,11 +43,11 @@ jobs:
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "✅ tn-mbamca.com is ONLINE"
+          subject: "✅ Website Uptime Monitor - Site is ONLINE (Demo)"
           to: ${{ secrets.EMAIL_TO }}
           from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
           body: |
-            tn-mbamca.com just came back online.
+            Target site (google.com) is ONLINE.
             HTTP status: ${{ steps.check.outputs.http_status }}
             Checked at: ${{ github.run_id }} (UTC time in Actions log)
 
