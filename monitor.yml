@@ -35,23 +35,7 @@ jobs:
             echo "prev_state=unknown" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Email me — site just came ONLINE
-        if: steps.check.outputs.site_state == 'online' && steps.prev.outputs.prev_state != 'online'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "✅ Website Uptime Monitor - Site is ONLINE (Demo)"
-          to: ${{ secrets.EMAIL_TO }}
-          from: Site Monitor <${{ secrets.EMAIL_USERNAME }}>
-          body: |
-            Target site (google.com) is ONLINE.
-            HTTP status: ${{ steps.check.outputs.http_status }}
-            Checked at: ${{ github.run_id }} (UTC time in Actions log)
-
-      - name: Email me — site just went OFFLINE (optional, comment out if not needed)
+      - name: Email Alert — Site went DOWN ❌
         if: steps.check.outputs.site_state == 'offline' && steps.prev.outputs.prev_state == 'online'
         uses: dawidd6/action-send-mail@v3
         with:
