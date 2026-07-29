@@ -14,7 +14,7 @@ on:
         description: 'Target URL to monitor'
         required: false
         type: string
-        default: 'https://google.com'
+        default: 'https://www.tn-mbamca.com'
 
 permissions:
   contents: write           # Needed to commit status.txt and last_run.txt
@@ -37,7 +37,7 @@ jobs:
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          TARGET_URL: ${{ inputs.target_url || 'https://google.com' }}
+          TARGET_URL: ${{ inputs.target_url || 'https://www.tn-mbamca.com' }}
           FORCE_EMAIL: ${{ inputs.force_email || 'false' }}
         run: |
           python3 monitor.py

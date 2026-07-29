@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from email.mime.text import MIMEText
 
 # Configuration from Environment Variables
-TARGET_URL = os.getenv("TARGET_URL", "https://google.com")
+TARGET_URL = os.getenv("TARGET_URL", "https://www.tn-mbamca.com")
 EMAIL_USERNAME = os.getenv("EMAIL_USERNAME")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_TO = os.getenv("EMAIL_TO")
