@@ -9,7 +9,7 @@ on:
         description: 'Force send notification email for testing?'
         required: false
         type: boolean
-        default: true
+        default: false
       target_url:
         description: 'Target URL to monitor'
         required: false
@@ -38,7 +38,7 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           TARGET_URL: ${{ inputs.target_url || 'https://www.tn-mbamca.com' }}
-          FORCE_EMAIL: ${{ inputs.force_email || 'false' }}
+          FORCE_EMAIL: ${{ inputs.force_email == true && 'true' || 'false' }}
         run: |
           python3 monitor.py
 
@@ -47,5 +47,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add status.txt last_run.txt
-          git diff --staged --quiet || git commit -m "auto: update site status [skip ci]"
-          git push
+          if ! git diff --staged --quiet; then
+            git commit -m "auto: update site status [skip ci]"
+            git pull --rebase origin main || true
+            git push
+          fi

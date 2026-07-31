@@ -1,6 +1,7 @@
 import os
 import sys
 import urllib.request
+import ssl
 import smtplib
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
@@ -38,10 +39,18 @@ def check_site(url):
     print(f"🔍 [ARC-SERVER] Checking target URL: {url}")
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LunaAI-ArcServer/2.0"}
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        }
     )
+    
+    # Create unverified SSL context to prevent false offline status from SSL chain issues
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
     try:
-        with urllib.request.urlopen(req, timeout=15) as response:
+        with urllib.request.urlopen(req, timeout=15, context=ssl_context) as response:
             status_code = response.getcode()
             print(f"🌐 HTTP Status Code: {status_code}")
             if 200 <= status_code < 400:
@@ -174,16 +183,16 @@ def main():
             subject = f"🌙 Luna AI: Good morning Boss! {TARGET_URL} is ONLINE ✨"
         else:
             subject = f"🚨 Luna AI Alert: Boss! {TARGET_URL} is DOWN ❌"
-    elif current_state == "offline" and prev_state == "online":
-        print("🚨 ALERT: Site went DOWN!")
+    elif current_state == "offline" and prev_state != "offline":
+        print("🚨 ALERT: Site is DOWN!")
         should_send_email = True
         subject = f"🚨 Luna AI Alert: Boss! {TARGET_URL} is DOWN ❌"
     elif current_state == "online" and prev_state == "offline":
         print("🎉 RECOVERY: Site is back ONLINE!")
         should_send_email = True
         subject = f"🌙 Luna AI: Good morning Boss! {TARGET_URL} is back ONLINE ✨"
-    elif prev_state == "unknown":
-        print("ℹ️ First run initialization. Saving initial state without alert.")
+    elif prev_state == "unknown" and current_state == "online":
+        print("ℹ️ First run initialization. Site is online.")
     else:
         print("ℹ️ No state change detected. Luna AI is standing by.")
 
